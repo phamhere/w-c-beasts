@@ -1,0 +1,76 @@
+<script src="../simpletest.js"></script>
+<script>
+  // It should return true if the first argument exists in the second argument's prototype chain
+  // It should return false if the first argument doesn't exist in the second argument's prototype chain
+  // It should return true if the first argument is an object and the second is the default Object prototype
+  // It should return true for any number of prototype links
+
+
+  function isPrototypeOf(prototypeObj, object) {
+    const prototypeOfObj = Object.getPrototypeOf(object)
+    // if the object's prototype is equal to the prototypeObj, return true
+    if (prototypeOfObj === prototypeObj) {
+      return true;
+      // recurse while the object's prototype's prototype isn't null (base case) to check if any of the prototypes of the object match the prototypeObj
+    } else if (Object.getPrototypeOf(prototypeOfObj) !== null) {
+      return isPrototypeOf(prototypeObj, prototypeOfObj);
+      // if no matches occur return false
+    } else {
+      return false
+    }
+  }
+
+  tests({
+    'It should return true if the first argument exists in the second argument\'s prototype chain.': function () {
+      const canine = {
+        bark: function () {
+          console.log('bark');
+        }
+      };
+
+      const dog = Object.create(canine);
+
+      eq(isPrototypeOf(canine, dog), true);
+    },
+
+    'It should return false if the first argument doesn\'t exist in the second argument\'s prototype chain.': function () {
+      const canine = {
+        bark: function () {
+          console.log('bark');
+        }
+      };
+
+      const dog = Object.create(canine);
+
+      eq(isPrototypeOf(dog, canine), false);
+    },
+
+    'It should return true if the first argument is an object and the second is the default Object prototype.': function () {
+      const canine = {
+        bark: function () {
+          console.log('bark');
+        }
+      };
+
+      eq(isPrototypeOf(Object.prototype, canine), true);
+    },
+
+    'It should return true for any number of prototype links.': function () {
+      const canine = {
+        bark: function () {
+          console.log('bark');
+        }
+      };
+
+      const dog = Object.create(canine);
+      dog.fetch = function () {
+        console.log('fetch');
+      };
+
+      const myDog = Object.create(dog);
+
+      eq(isPrototypeOf(canine, myDog), true);
+    }
+
+  });
+</script>
