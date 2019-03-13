@@ -1,0 +1,149 @@
+<script src="../simpletest.js"></script>
+<script>
+  // It should set up a library when passed a string, array, and a callback function
+  // It should return a library if there's just a string argument
+  // It should set up a library with a dependency if one is provided
+  // It should set up a library with multiple dependencies if more than one dependency is provided
+  // It should be able to load libraries with dependencies before dependencies are loaded
+  // It should run the callback function only once for each library
+
+  (function () {
+    const libraryStorage = {};
+    const dependencyStorage = {};
+    const callbackStorage = {};
+
+    function librarySystem(libraryName, dependencies, callback) {
+      if (arguments.length > 1) {
+        // unpacking dependencies into a new array and getting their values from libraryStorage
+        const unpackedDependencies = dependencies.map(
+          item => libraryStorage[item]
+        );
+
+        // looping through unpackedDependencies to check if any values are undefined, if so change the undefinedCheck variable to true
+        let undefinedCheck = false;
+        for (let i = 0; i < unpackedDependencies.length; i++) {
+          if (unpackedDependencies[i] === undefined) undefinedCheck = true
+        }
+
+        // if no values in unpackedDependencies are undefined, store the callback
+        if (!undefinedCheck) {
+          libraryStorage[libraryName] = callback(...unpackedDependencies);
+        } else { // otherwise store dependencies and callback for later use
+          dependencyStorage[libraryName] = dependencies;
+          callbackStorage[libraryName] = callback;
+        }
+      } else {
+        if (libraryName in libraryStorage) {
+          return libraryStorage[libraryName];
+        } else { // get dependencies and callback from storage, store callback call in libraryStorage, and return libraryStorage item
+          const unpackedDependencies = dependencyStorage[libraryName].map(
+            item => libraryStorage[item]
+          );
+
+          let undefinedCheck = false;
+          for (let i = 0; i < unpackedDependencies.length; i++) {
+            if (unpackedDependencies[i] === undefined) undefinedCheck = true
+          }
+
+          if (!undefinedCheck) {
+            libraryStorage[libraryName] = callbackStorage[libraryName](...unpackedDependencies);
+            return libraryStorage[libraryName];
+          } else { // throws error if any dependencies are undefined at loading
+            throw new TypeError('Dependencies not found: Please load required dependencies')
+          }
+        }
+
+      }
+    }
+
+    window.librarySystem = librarySystem;
+  })()
+
+  tests({
+    'It should set up a library when passed a string, array, and a callback function.': function () {
+      librarySystem('app', [], function () {
+        return 'app';
+      });
+
+      eq(librarySystem('app') !== undefined, true);
+    },
+
+    'It should return a library if there\'s just a string argument.': function () {
+      eq(librarySystem('app'), 'app');
+    },
+
+    'It should set up a library with a dependency if one is provided.': function () {
+      librarySystem('dependency', [], function () {
+        return 'loaded dependency';
+      });
+
+      librarySystem('new app', ['dependency'], function (dependency) {
+        return 'new app with ' + dependency;
+      });
+    },
+
+    'It should set up a library with multiple dependencies if more than one dependency is provided.': function () {
+      librarySystem('name', [], function () {
+        return 'Gordon';
+      });
+
+      librarySystem('company', [], function () {
+        return 'Watch and Code';
+      });
+
+      librarySystem('workBlurb', ['name', 'company'], function (name, company) {
+        return name + ' works at ' + company;
+      });
+
+      eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+    },
+
+    'It should be able to load libraries with dependencies before dependencies are loaded.': function () {
+      librarySystem('workBlurb2', ['name2', 'company2'], function (name, company) {
+        return name + ' studies at ' + company;
+      });
+
+      librarySystem('name2', [], function () {
+        return 'Peter';
+      });
+
+      librarySystem('company2', [], function () {
+        return 'Lambda School';
+      });
+
+      eq(librarySystem('workBlurb2'), 'Peter studies at Lambda School');
+    },
+
+    'It should throw an error if it loads a library with dependencies not yet created.': function () {
+      librarySystem('workBlurb3', ['name3', 'company3'], function (name, company) {
+        return name + ' studies at ' + company;
+      });
+
+      librarySystem('name3', [], function () {
+        return 'Michael';
+      });
+
+      try {
+        librarySystem('workBlurb3');
+      } catch (err) {
+        eq(err instanceof TypeError, true);
+      }
+
+    },
+
+    'It should run the callback function only once for each library.': function () {
+      let counter = 0;
+      librarySystem('count', [], function () {
+        counter++;
+        return 'Counting callbacks'
+      });
+
+      librarySystem('count');
+      librarySystem('count');
+      librarySystem('count');
+
+      eq(counter, 1);
+    }
+
+  });
+</script>
