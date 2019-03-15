@@ -1,0 +1,95 @@
+<script src="../simpletest.js"></script>
+<script>
+  // accountingjs toFixed
+  // var toFixed = lib.toFixed = function(value, precision) {
+  // 	precision = checkPrecision(precision, lib.settings.number.precision);
+
+  // 	var exponentialForm = Number(lib.unformat(value) + 'e' + precision);
+  // 	var rounded = Math.round(exponentialForm);
+  // 	var finalResult = Number(rounded + 'e-' + precision).toFixed(precision);
+  // 	return finalResult;
+  // };
+
+  function toFixed(value, precision) {
+    if (precision === undefined) {
+      precision = 0;
+    }
+
+    // making a string of 0's to allow later string manipulation
+    let precisionStr = '';
+    for (let i = 0; i < precision; i++) {
+      precisionStr = precisionStr + '0'
+    }
+
+    // making a negative flag for later
+    let negative = false;
+    // turning value into a string
+    value = value + '';
+    // if value is negative, remove negative sign and change negative flag
+    if (value.match(/-/)) {
+      value = value.replace(/-/, '');
+      negative = true;
+    }
+    // if value has a decimal inside
+    if (value.match(/\./)) {
+      const valueWithZeros = value + precisionStr;
+      const indexOfPeriod = value.match(/\./).index;
+      // changing value into an array to manipulate it
+      const arrayedValue = valueWithZeros.split('');
+      // moving period over precision spaces
+      arrayedValue.splice(indexOfPeriod, 1);
+      arrayedValue.splice(indexOfPeriod + precision, 0, '.');
+      const rounded = Math.round(arrayedValue.join('')) + '';
+      const arrayedRounded = rounded.split('');
+      if (precision > 0) {
+        // to pad the array in case the later splice with -precision is outside of the array
+        while (arrayedRounded.length < precision) {
+          arrayedRounded.unshift('0');
+        }
+        arrayedRounded.splice(-precision, 0, '.');
+      }
+      // to pad the array if it starts with a decimal
+      if (arrayedRounded[0] === '.') {
+        arrayedRounded.unshift('0');
+      }
+      // to add a negative sign if the value is negative
+      if (negative) {
+        arrayedRounded.unshift('-');
+      }
+      return arrayedRounded.join('');
+    } else {
+      return value + '.' + precisionStr;
+    }
+  }
+
+  tests({
+    'It should reutrn 0.62 for toFixed(0.615, 2).': function () {
+      eq(toFixed(0.615, 2), "0.62");
+    },
+
+    'It should return 10.24 for toFixed(10.235, 2).': function () {
+      eq(toFixed(10.235, 2), "10.24");
+    },
+
+    'It should return 1.01 for toFixed(1.005, 2).': function () {
+      eq(toFixed(1.005, 2), "1.01")
+    },
+
+    'It should return 101 for toFixed(100.5).': function () {
+      eq(toFixed(100.5), "101")
+    },
+
+    'It should return 0.01 for toFixed(0.005, 2).': function () {
+      eq(toFixed(0.005, 2), "0.01")
+    },
+
+    'It should return -10.24 for toFixed(-10.235, 2).': function () {
+      eq(toFixed(-10.235, 2), "-10.24")
+    },
+
+    'It should return 1.0000 for toFixed(1, 4).': function () {
+      eq(toFixed(1, 4), "1.0000")
+    },
+
+  });
+</script>
